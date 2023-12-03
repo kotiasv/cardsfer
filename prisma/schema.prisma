@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id           String      @id @default(auto()) @map("_id") @db.ObjectId
+    workspacesId String[]    @db.ObjectId
+    name         String
+    email        String      @unique
+    image        String
+    workspaces   Workspace[] @relation(fields: [workspacesId], references: [id])
+}
+
+model Workspace {
+    id          String   @id @default(auto()) @map("_id") @db.ObjectId
+    creatorId   String   @db.ObjectId
+    membersId   String[] @db.ObjectId
+    // boardsId    String[] @db.ObjectId
+    name        String
+    description String
+    inviteCode  String   @unique
+    members     User[]   @relation(fields: [membersId], references: [id])
+    boards      Board[]
+}
+
+model Board {
+    id          String     @id @default(auto()) @map("_id") @db.ObjectId
+    workspaceId String?    @db.ObjectId
+    name        String
+    columnsName String[]
+    cards       Card[]
+    workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+}
+
+model Card {
+    id            String   @id @default(auto()) @map("_id") @db.ObjectId
+    boardId       String?  @db.ObjectId
+    name          String
+    priority      Priority
+    description   String
+    relatedColumn String
+    board         Board?   @relation(fields: [boardId], references: [id])
+}
+
+enum Priority {
+    Low
+    Medium
+    High
+    Completed
+}

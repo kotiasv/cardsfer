@@ -1,8 +1,7 @@
-import { User } from "@/types"
-import axios, { AxiosError } from "axios"
 import { AuthOptions } from "next-auth"
 import GithubProvider from "next-auth/providers/github"
-import { createUser, getEmail, getUser } from "./actions"
+
+import prisma from "./prisma"
 
 const {
     GITHUB_ID: githubId,
@@ -18,44 +17,48 @@ export const authOptions: AuthOptions = {
         })
     ],
     callbacks: {
-        session: async ({ session }) => {
-            const { name, email, image } = session.user
-            const dbUser: User = await getUser({
-                email: email as string
-            })
-            if (dbUser)
-                return {
-                    ...session,
-                    user: dbUser
+        session: async ({ session, token }) => {
+            console.log(token.user)
+            return session
+        },
+
+        jwt: async ({ token, account }) => {
+            if (account) {
+                const {
+                    name,
+                    email,
+                    picture: image
+                } = token
+
+                const dbUser = await prisma.user.findUnique({
+                    where: {
+                        email: email as string
+                    }
+                })
+
+                console.log("GET", dbUser)
+
+                if (dbUser) {
+                    token.user = dbUser
+                    return token
                 }
 
-            const user = await createUser({
-                name: name as string,
-                email: email as string,
-                image: image as string
-            })
-            return {
-                ...session,
-                user
+                const user = await prisma.user.create({
+                    data: {
+                        name: name as string,
+                        email: email as string,
+                        image: image as string
+                    }
+                })
+
+                console.log("POST", user)
+
+                token.user = user
             }
-        },
-        signIn: async ({ account, user }) => {
-            // get email for github provider
-            // if (account?.provider === "github") {
-            //     if (account?.provider === "github") {
-            //         const email = await getEmail(account.access_token as string)
-            //         if (!email)
-            //             return false
-
-            //         user.email = email
-
-            //     }
-            // }
-
-            return true
-        },
-        redirect: async ({ url, baseUrl }) => {
-            return `${baseUrl}/app`
+            return token
         }
+        // redirect: async ({ url, baseUrl }) => {
+        //     return `${baseUrl}/app`
+        // }
     }
 }
