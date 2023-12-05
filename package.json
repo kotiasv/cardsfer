@@ -10,7 +10,9 @@
         "fix": "npx eslint . --fix",
         "test": "npx jest",
         "prisma": "npx prisma generate",
-        "studio": "npx prisma studio"
+        "studio": "npx prisma studio",
+        "mongo:up": "docker compose up -d && docker-compose logs -f",
+        "mongo:down": "docker compose down"
     },
     "dependencies": {
         "@prisma/client": "^5.6.0",

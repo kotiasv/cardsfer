@@ -16,5 +16,5 @@ export const middleware = async (req: NextRequest) => {
     //         status: 401
     //     })
 
-    console.log(isAuthorized, req.nextUrl.pathname)
+    // console.log(isAuthorized, req.nextUrl.pathname)
 }
