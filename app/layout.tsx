@@ -16,8 +16,8 @@ const RootLayout = async ({
     children: React.ReactNode
 }) => {
     return (
-        <html lang="en">
-            <body className={inter.className}>
+        <html lang="en" className="screen">
+            <body className={`bg-black text-white screen ${inter.className}`}>
                 <AuthProvider>
                     {children}
                 </AuthProvider>

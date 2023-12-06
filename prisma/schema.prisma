@@ -12,7 +12,7 @@ datasource db {
 
 model User {
     id           String      @id @default(auto()) @map("_id") @db.ObjectId
-    workspacesId String[]    @db.ObjectId
+    workspacesId String[]    @unique @db.ObjectId
     name         String
     email        String      @unique
     image        String
@@ -22,7 +22,7 @@ model User {
 model Workspace {
     id          String   @id @default(auto()) @map("_id") @db.ObjectId
     creatorId   String   @db.ObjectId
-    membersId   String[] @db.ObjectId
+    membersId   String[] @unique @db.ObjectId
     // boardsId    String[] @db.ObjectId
     name        String
     description String

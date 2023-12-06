@@ -8,7 +8,9 @@ const config: Config = {
     ],
     theme: {
         extend: {
-
+            screens: {
+                "auth": "900px"
+            }
         },
     },
     plugins: [],

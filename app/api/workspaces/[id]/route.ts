@@ -1,6 +1,36 @@
 import prisma from "@/lib/prisma"
 import { Workspace } from "@prisma/client"
 
+const getWorkspace = async (_req: Request, { params }: {
+    params: {
+        id: string
+    }
+}) => {
+    const { id } = params
+
+    try {
+        const workspace = await prisma.workspace.findUnique({
+            where: {
+                id
+            },
+            include: {
+                members: true,
+                boards: true
+            }
+        })
+
+        return Response.json(workspace)
+    } catch (Err) {
+        const { name, message } = Err as Error
+        return Response.json({
+            name,
+            message
+        }, {
+            status: 400
+        })
+    }
+}
+
 const quitWorkspace = async (workspace: Workspace, userId: string) => {
 
     // todo: test it
@@ -30,8 +60,34 @@ const quitWorkspace = async (workspace: Workspace, userId: string) => {
     })
 }
 
-const deleteWorkspace = async () => {
-    // todo
+const deleteWorkspace = async (workspace: Workspace) => {
+    const usersId = workspace.membersId
+    await prisma.workspace.delete({
+        where: {
+            id: workspace.id
+        }
+    })
+
+    usersId.forEach(async userId => {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId
+            }
+        })
+
+        if (!user)
+            return
+
+        const workspacesId = user.workspacesId.filter(id => id !== workspace.id)
+        await prisma.user.update({
+            where: {
+                id: userId
+            },
+            data: {
+                workspacesId
+            }
+        })
+    })
 }
 
 const removeWorkspace = async (req: Request, { params }: {
@@ -73,12 +129,12 @@ const removeWorkspace = async (req: Request, { params }: {
                 status: 405
             })
 
-        action === "quit" && workspace.membersId.length > 1
+        action === "quit"
             ? await quitWorkspace(workspace, userId)
-            : await deleteWorkspace()
+            : await deleteWorkspace(workspace)
 
         return new Response(null, {
-            status: 201
+            status: 204
         })
     } catch (Err) {
         const { name, message } = Err as Error
@@ -91,10 +147,94 @@ const removeWorkspace = async (req: Request, { params }: {
     }
 }
 
-const joinWorkspace = async () => {
-    // todo
+const joinWorkspace = async (req: Request, { params }: {
+    params: {
+        id: string
+    }
+}) => {
+    const { id } = params
+
+    try {
+        const {
+            userId
+        } = await req.json() as {
+            userId: string
+        }
+
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId
+            }
+        })
+        if (!user)
+            return Response.json({
+                name: "NotFoundError",
+                message: "User is not found"
+            }, {
+                status: 404
+            })
+
+        const workspace = await prisma.workspace.findUnique({
+            where: {
+                id
+            }
+        })
+        if (!workspace)
+            return Response.json({
+                name: "NotFoundError",
+                message: "Workspace is not found"
+            }, {
+                status: 404
+            })
+
+        const isMember = workspace.membersId.find(id => id === userId)
+        if (isMember)
+            return Response.json({
+                name: "MatchedIdsError",
+                message: "User is already in workspace"
+            }, {
+                status: 400
+            })
+
+        await prisma.workspace.update({
+            where: {
+                id
+            },
+            data: {
+                membersId: [
+                    ...workspace.membersId,
+                    userId
+                ]
+            }
+        })
+        await prisma.user.update({
+            where: {
+                id: userId
+            },
+            data: {
+                workspacesId: [
+                    ...user.workspacesId,
+                    id
+                ]
+            }
+        })
+
+        return new Response(null, {
+            status: 204
+        })
+    } catch (Err) {
+        const { name, message } = Err as Error
+        return Response.json({
+            name,
+            message
+        }, {
+            status: 400
+        })
+    }
 }
 
 export {
+    getWorkspace as GET,
+    joinWorkspace as POST,
     removeWorkspace as DELETE
 }

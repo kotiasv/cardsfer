@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma"
 
-const getUsers = async (_req: Request, { params }: {
+const getUser = async (_req: Request, { params }: {
     params: {
         id: string
     }
@@ -29,6 +29,32 @@ const getUsers = async (_req: Request, { params }: {
     }
 }
 
+// const deleteUser = async (_req: Request, { params }: {
+//     params: {
+//         id: string
+//     }
+// }) => {
+//     const { id } = params
+
+//     try {
+//         const user = await prisma.user.delete({
+//             where: {
+//                 id
+//             }
+//         })
+
+//         return Response.json(user)
+//     } catch (Err) {
+//         const { name, message } = Err as Error
+//         return Response.json({
+//             name,
+//             message
+//         }, {
+//             status: 400
+//         })
+//     }
+// }
+
 export {
-    getUsers as GET
+    getUser as GET
 }
